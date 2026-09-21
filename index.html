@@ -11,7 +11,7 @@
     <style>
         :root {
             --bg-dark: #070d19;
-            --glass-bg: rgba(15, 23, 42, 0.65);
+            --glass-bg: rgba(15, 23, 42, 0.7);
             --glass-border: rgba(255, 255, 255, 0.14);
             --glass-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
             
@@ -152,7 +152,7 @@
             letter-spacing: 0.3px;
         }
 
-        /* Giriş Formu */
+        /* Giriş Formu ve Kartlar */
         .card-box {
             background: rgba(15, 23, 42, 0.5);
             border-radius: 24px;
@@ -405,7 +405,7 @@
             line-height: 1.5;
         }
 
-        /* Yönetici Paneli & Sıralama Tablosu */
+        /* Yönetici Paneli & Şık Düzenleyici */
         .admin-trigger {
             position: absolute;
             top: 24px;
@@ -462,18 +462,40 @@
             font-weight: 700;
         }
 
-        /* Düzenleyici Izgarası */
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        /* Şık Düzenleme Satırı (Radyo + Input) */
+        .option-edit-row {
+            display: flex;
+            align-items: center;
             gap: 12px;
-            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 14px;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
         }
 
-        @media (max-width: 600px) {
-            .options-grid {
-                grid-template-columns: 1fr;
-            }
+        .option-edit-row:focus-within {
+            border-color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        .option-radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            color: var(--accent-gold);
+            min-width: 110px;
+            font-size: 0.9rem;
+        }
+
+        .option-radio {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--accent-green);
         }
 
         .badge-rank {
@@ -616,7 +638,7 @@
         <div id="adminPanel" class="admin-panel hidden">
             <h3><i class="fas fa-user-lock"></i> Yönetici Kontrol Paneli</h3>
             
-            <div style="display: flex; gap: 12px; margin-bottom: 1.2rem;">
+            <div style="display: flex; gap: 12px; margin-bottom: 1.2rem; flex-wrap: wrap;">
                 <button class="btn btn-secondary" id="btnTabResults" style="font-size:0.88rem;"><i class="fas fa-trophy"></i> Katılımcı Sıralaması</button>
                 <button class="btn btn-secondary" id="btnTabQuestions" style="font-size:0.88rem;"><i class="fas fa-edit"></i> Soruları ve Şıkları Düzenle</button>
             </div>
@@ -648,7 +670,9 @@
 
             <!-- Soru & Şık Editörü -->
             <div id="adminTabQuestions" class="hidden">
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.2rem;">Burada yapacağınız değişiklikler anında veritabanına kaydedilir ve **tüm kullanıcılar için** geçerli olur.</p>
+                <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.8rem 1.2rem; border-radius: 14px; margin-bottom: 1.2rem; font-size: 0.88rem; color: var(--accent-blue);">
+                    <i class="fas fa-hand-pointer"></i> <strong>İpucu:</strong> Şıkları yazdıktan sonra doğru olan şıkkın yanındaki <strong>daireyi (radyo butonunu)</strong> işaretleyin!
+                </div>
                 <div id="adminQuestionList"></div>
             </div>
         </div>
@@ -683,7 +707,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Varsayılan Sorular (Eğer Firebase'de henüz soru yoksa kullanılır)
+        // Varsayılan Sorular
         const defaultQuestions = [
             {
                 title: "1. Ali, Burak, Ceyda ve Deniz kuyruktadır. Ali Ceyda'nın önündedir, Deniz ise Burak'ın arkasındadır. Burak en önde olduğuna göre 3. sıradaki kimdir?",
@@ -747,7 +771,7 @@
             }
         ];
 
-        let questions = [...defaultQuestions];
+        let questions = [];
         let currentQuestionIndex = 0;
         let userAnswers = [];
         let timerInterval = null;
@@ -759,7 +783,7 @@
         const stepResults = document.getElementById('stepResults');
         const adminPanel = document.getElementById('adminPanel');
 
-        // Firebase'den Soruları Çek
+        // Soruları Önce Firebase'den, Olmazsa LocalStorage/Varsayılardan Yükle
         async function loadQuestionsFromFirebase() {
             try {
                 const docRef = doc(db, "settings", "quiz_questions");
@@ -768,16 +792,17 @@
                 if (docSnap.exists() && docSnap.data().list) {
                     questions = docSnap.data().list;
                 } else {
-                    questions = [...defaultQuestions];
+                    const localData = localStorage.getItem('ihh_questions');
+                    questions = localData ? JSON.parse(localData) : [...defaultQuestions];
                 }
             } catch (error) {
-                console.error("Sorular Firebase'den yüklenirken hata oluştu:", error);
-                questions = [...defaultQuestions];
+                console.error("Firebase yükleme hatası:", error);
+                const localData = localStorage.getItem('ihh_questions');
+                questions = localData ? JSON.parse(localData) : [...defaultQuestions];
             }
             userAnswers = new Array(questions.length).fill(null);
         }
 
-        // Sayfa Açılınca Soruları Yükle
         loadQuestionsFromFirebase();
 
         function escapeHtml(text) {
@@ -803,7 +828,6 @@
                 return;
             }
 
-            // Başlamadan önce güncel soruları veritabanından çek
             await loadQuestionsFromFirebase();
 
             userData.name = nameInput;
@@ -840,7 +864,7 @@
             }, 1000);
         }
 
-        // Soruları Ekrana Getir
+        // Soruyu Göster
         function renderQuestion() {
             if (!questions || questions.length === 0) return;
 
@@ -893,7 +917,7 @@
             }
         });
 
-        // Testi Bitir & Firebase'e Kaydet
+        // Testi Bitir & Kaydet
         async function finishQuiz() {
             clearInterval(timerInterval);
 
@@ -952,7 +976,7 @@
             });
         }
 
-        // Yönetici Girişi
+        // Yönetici Paneli İşlemleri
         document.getElementById('btnAdminLogin').addEventListener('click', async () => {
             const pwd = prompt("Yönetici Şifresi:");
             if (pwd && pwd.trim() === "ihh2026sb") {
@@ -977,7 +1001,7 @@
             renderAdminQuestionEditor();
         });
 
-        // Yönetici Tablosu
+        // Yönetici Sıralama Tablosu
         async function loadLeaderboard() {
             const tbody = document.getElementById('adminLeaderboardBody');
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Veriler Yükleniyor...</td></tr>';
@@ -998,10 +1022,7 @@
                 resultsList.sort((a, b) => {
                     const scoreA = Number(a.score || 0);
                     const scoreB = Number(b.score || 0);
-                    
-                    if (scoreB !== scoreA) {
-                        return scoreB - scoreA;
-                    }
+                    if (scoreB !== scoreA) return scoreB - scoreA;
                     
                     const timeA = Number(a.timeSpent || 999);
                     const timeB = Number(b.timeSpent || 999);
@@ -1039,119 +1060,130 @@
             }
         }
 
-        // Gelişmiş Soru & Şık Düzenleyicisi
+        // GELİŞMİŞ ŞIK & DOĞRU CEVAP DÜZENLEYİCİSİ
         function renderAdminQuestionEditor() {
             const container = document.getElementById('adminQuestionList');
             container.innerHTML = '';
 
-            questions.forEach((q, idx) => {
+            const prefixes = ['A', 'B', 'C', 'D'];
+
+            questions.forEach((q, qIdx) => {
                 const box = document.createElement('div');
                 box.className = 'card-box';
                 box.style.marginBottom = '1.5rem';
+
+                let optionsRowsHtml = '';
+                for (let optIdx = 0; optIdx < 4; optIdx++) {
+                    const isChecked = (q.correct === optIdx) ? 'checked' : '';
+                    optionsRowsHtml += `
+                        <div class="option-edit-row">
+                            <label class="option-radio-label" for="radio_${qIdx}_${optIdx}">
+                                <input type="radio" name="correct_opt_${qIdx}" value="${optIdx}" id="radio_${qIdx}_${optIdx}" class="option-radio" ${isChecked}>
+                                <span>${prefixes[optIdx]} Şıkkı</span>
+                            </label>
+                            <input type="text" class="form-input" id="adminQ_${qIdx}_opt${optIdx}" style="padding-left:1rem;" value="${escapeHtml(q.options[optIdx] || '')}" placeholder="${prefixes[optIdx]} Şıkkının Metni">
+                        </div>
+                    `;
+                }
+
                 box.innerHTML = `
-                    <h4 style="color:var(--accent-blue); margin-bottom:1rem; font-size:1.1rem;"><i class="fas fa-question-circle"></i> Soru ${idx + 1}</h4>
+                    <div style="display:flex; justify-shadow:space-between; align-items:center; margin-bottom:1rem;">
+                        <h4 style="color:var(--accent-blue); font-size:1.1rem;"><i class="fas fa-question-circle"></i> Soru ${qIdx + 1}</h4>
+                        <button class="btn btn-danger" onclick="deleteQuestion(${qIdx})" style="width:auto; padding:0.4rem 0.9rem; font-size:0.82rem;"><i class="fas fa-trash"></i> Soruyu Sil</button>
+                    </div>
                     
                     <div class="form-group">
                         <label>Soru Metni</label>
-                        <textarea class="form-input" id="adminQ_${idx}_title" rows="2" style="padding:0.8rem;">${escapeHtml(q.title)}</textarea>
+                        <textarea class="form-input" id="adminQ_${qIdx}_title" rows="2" style="padding:0.8rem;">${escapeHtml(q.title)}</textarea>
                     </div>
 
                     <div class="form-group">
-                        <label style="color:var(--accent-gold);"><i class="fas fa-list-ol"></i> Şıklar</label>
-                        <div class="options-grid">
-                            <div>
-                                <label style="font-size:0.8rem;">A Şıkkı</label>
-                                <input type="text" class="form-input" id="adminQ_${idx}_opt0" style="padding-left:1rem;" value="${escapeHtml(q.options[0] || '')}">
-                            </div>
-                            <div>
-                                <label style="font-size:0.8rem;">B Şıkkı</label>
-                                <input type="text" class="form-input" id="adminQ_${idx}_opt1" style="padding-left:1rem;" value="${escapeHtml(q.options[1] || '')}">
-                            </div>
-                            <div>
-                                <label style="font-size:0.8rem;">C Şıkkı</label>
-                                <input type="text" class="form-input" id="adminQ_${idx}_opt2" style="padding-left:1rem;" value="${escapeHtml(q.options[2] || '')}">
-                            </div>
-                            <div>
-                                <label style="font-size:0.8rem;">D Şıkkı</label>
-                                <input type="text" class="form-input" id="adminQ_${idx}_opt3" style="padding-left:1rem;" value="${escapeHtml(q.options[3] || '')}">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label style="color:var(--accent-green);"><i class="fas fa-check-double"></i> Doğru Cevap Şıkkı</label>
-                        <select class="form-input" id="adminQ_${idx}_correct" style="padding-left:1rem; color:#fff; background:rgba(15, 23, 42, 0.8);">
-                            <option value="0" ${q.correct === 0 ? 'selected' : ''} style="background:#0f172a;">A Şıkkı</option>
-                            <option value="1" ${q.correct === 1 ? 'selected' : ''} style="background:#0f172a;">B Şıkkı</option>
-                            <option value="2" ${q.correct === 2 ? 'selected' : ''} style="background:#0f172a;">C Şıkkı</option>
-                            <option value="3" ${q.correct === 3 ? 'selected' : ''} style="background:#0f172a;">D Şıkkı</option>
-                        </select>
+                        <label style="color:var(--accent-gold); margin-bottom:0.8rem;">
+                            <i class="fas fa-check-circle" style="color:var(--accent-green);"></i> Şıklar (Doğru Cevabın Yanındaki Daireyi İşaretleyin)
+                        </label>
+                        ${optionsRowsHtml}
                     </div>
 
                     <div class="form-group" style="margin-bottom:0;">
-                        <label>Açıklama / Çözüm Metni</label>
-                        <input type="text" class="form-input" id="adminQ_${idx}_exp" style="padding-left:1rem;" value="${escapeHtml(q.explanation || '')}">
+                        <label>Çözüm / Açıklama Metni</label>
+                        <input type="text" class="form-input" id="adminQ_${qIdx}_exp" style="padding-left:1rem;" value="${escapeHtml(q.explanation || '')}" placeholder="Çözüm detayını buraya yazabilirsiniz">
                     </div>
                 `;
                 container.appendChild(box);
             });
 
-            // Butonlar Alanı
+            // Alt Butonlar
             const btnGroup = document.createElement('div');
             btnGroup.style.display = 'flex';
             btnGroup.style.gap = '12px';
             btnGroup.style.marginTop = '1.5rem';
+            btnGroup.style.flexWrap = 'wrap';
+
+            const addQBtn = document.createElement('button');
+            addQBtn.className = 'btn btn-secondary';
+            addQBtn.style.width = 'auto';
+            addQBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Yeni Soru Ekle';
+            addQBtn.onclick = () => {
+                questions.push({
+                    title: `${questions.length + 1}. Yeni Soru Metni`,
+                    options: ["Seçenek A", "Seçenek B", "Seçenek C", "Seçenek D"],
+                    correct: 0,
+                    explanation: "Bu sorunun çözüm açıklaması."
+                });
+                renderAdminQuestionEditor();
+            };
 
             const saveBtn = document.createElement('button');
             saveBtn.className = 'btn btn-primary';
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Tüm Soruları ve Şıkları Kaydet';
+            saveBtn.style.flex = '1';
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Tüm Değişiklikleri Kaydet';
             saveBtn.onclick = async () => {
                 saveBtn.disabled = true;
                 saveBtn.innerText = "Kaydediliyor...";
 
-                questions.forEach((q, idx) => {
-                    q.title = document.getElementById(`adminQ_${idx}_title`).value;
-                    q.options[0] = document.getElementById(`adminQ_${idx}_opt0`).value;
-                    q.options[1] = document.getElementById(`adminQ_${idx}_opt1`).value;
-                    q.options[2] = document.getElementById(`adminQ_${idx}_opt2`).value;
-                    q.options[3] = document.getElementById(`adminQ_${idx}_opt3`).value;
-                    q.correct = parseInt(document.getElementById(`adminQ_${idx}_correct`).value, 10);
-                    q.explanation = document.getElementById(`adminQ_${idx}_exp`).value;
-                });
+                // Formdaki tüm verileri topla
+                for (let qIdx = 0; qIdx < questions.length; qIdx++) {
+                    questions[qIdx].title = document.getElementById(`adminQ_${qIdx}_title`).value;
+                    questions[qIdx].options[0] = document.getElementById(`adminQ_${qIdx}_opt0`).value;
+                    questions[qIdx].options[1] = document.getElementById(`adminQ_${qIdx}_opt1`).value;
+                    questions[qIdx].options[2] = document.getElementById(`adminQ_${qIdx}_opt2`).value;
+                    questions[qIdx].options[3] = document.getElementById(`adminQ_${qIdx}_opt3`).value;
+                    questions[qIdx].explanation = document.getElementById(`adminQ_${qIdx}_exp`).value;
+
+                    // Doğru şıkkı radyodan oku
+                    const selectedRadio = document.querySelector(`input[name="correct_opt_${qIdx}"]:checked`);
+                    if (selectedRadio) {
+                        questions[qIdx].correct = parseInt(selectedRadio.value, 10);
+                    }
+                }
+
+                // Hem LocalStorage'a hem de Firebase'e kaydet
+                localStorage.setItem('ihh_questions', JSON.stringify(questions));
 
                 try {
                     await setDoc(doc(db, "settings", "quiz_questions"), { list: questions });
-                    alert("Sorular veritabanına kaydedildi! Artık TÜM KULLANICILAR bu yeni soruları görecek.");
+                    alert("Tüm soru metinleri, A-B-C-D şıkları ve doğru cevaplar başarıyla kaydedildi!");
                 } catch (err) {
-                    console.error("Kayıt hatası:", err);
-                    alert("Kaydedilirken bir hata oluştu: " + err.message);
+                    console.error("Firebase kayıt hatası:", err);
+                    alert("Sorular yerel olarak kaydedildi. (Firebase bildirimi: " + err.message + ")");
                 } finally {
                     saveBtn.disabled = false;
-                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Tüm Soruları ve Şıkları Kaydet';
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Tüm Değişiklikleri Kaydet';
                 }
             };
 
-            const resetBtn = document.createElement('button');
-            resetBtn.className = 'btn btn-danger';
-            resetBtn.style.width = 'auto';
-            resetBtn.innerHTML = '<i class="fas fa-undo"></i> Varsayılana Sıfırla';
-            resetBtn.onclick = async () => {
-                if (confirm("Tüm sorular orijinal hallerine döndürülecektir. Onaylıyor musunuz?")) {
-                    questions = [...defaultQuestions];
-                    try {
-                        await setDoc(doc(db, "settings", "quiz_questions"), { list: questions });
-                        renderAdminQuestionEditor();
-                        alert("Sorular orijinal varsayılan hale getirildi.");
-                    } catch (err) {
-                        alert("Sıfırlama hatası: " + err.message);
-                    }
-                }
-            };
-
+            btnGroup.appendChild(addQBtn);
             btnGroup.appendChild(saveBtn);
-            btnGroup.appendChild(resetBtn);
             container.appendChild(btnGroup);
         }
+
+        // Soru Silme Fonksiyonu
+        window.deleteQuestion = function(index) {
+            if (confirm(`${index + 1}. soruyu silmek istediğinize emin misiniz?`)) {
+                questions.splice(index, 1);
+                renderAdminQuestionEditor();
+            }
+        };
     </script>
 </body>
 </html>
