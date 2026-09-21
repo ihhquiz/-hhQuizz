@@ -7,20 +7,20 @@
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         :root {
             --bg-dark: #070d19;
             --glass-bg: rgba(15, 23, 42, 0.7);
             --glass-border: rgba(255, 255, 255, 0.14);
             --glass-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
-            
+
             --accent-blue: #38bdf8;
             --accent-cyan: #06b6d4;
             --accent-gold: #fbbf24;
             --accent-green: #10b981;
             --accent-red: #f43f5e;
-            
+
             --text-light: #f8fafc;
             --text-muted: #94a3b8;
         }
@@ -31,6 +31,14 @@
             padding: 0;
             font-family: 'Plus Jakarta Sans', sans-serif;
             user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* ÖNEMLİ: Safari/iOS'ta user-select:none olan alanlara yazı yazılamaz.
+           Yönetici panelindeki tüm giriş alanları için yazmaya izin veriyoruz. */
+        input, textarea {
+            user-select: text;
+            -webkit-user-select: text;
         }
 
         body {
@@ -201,6 +209,15 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        .form-input.plain {
+            padding: 0.85rem 1rem;
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            line-height: 1.5;
+        }
+
         .form-input:focus {
             background: rgba(255, 255, 255, 0.09);
             border-color: var(--accent-blue);
@@ -228,13 +245,18 @@
             letter-spacing: 0.3px;
         }
 
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
         .btn-primary {
             background: linear-gradient(135deg, #0284c7 0%, #0d9488 100%);
             color: #ffffff;
             box-shadow: 0 12px 28px -6px rgba(2, 132, 199, 0.55), 0 0 20px rgba(13, 148, 136, 0.3);
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-3px) scale(1.01);
             box-shadow: 0 16px 36px -6px rgba(2, 132, 199, 0.7), 0 0 30px rgba(13, 148, 136, 0.5);
             background: linear-gradient(135deg, #0369a1 0%, #0f766e 100%);
@@ -248,9 +270,15 @@
             padding: 0.9rem 1.8rem;
         }
 
-        .btn-secondary:hover {
+        .btn-secondary:hover:not(:disabled) {
             background: rgba(255, 255, 255, 0.2);
             border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary.tab-active {
+            background: rgba(251, 191, 36, 0.18);
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
         }
 
         .btn-danger {
@@ -259,8 +287,16 @@
             color: var(--accent-red);
         }
 
-        .btn-danger:hover {
+        .btn-danger:hover:not(:disabled) {
             background: rgba(244, 63, 94, 0.35);
+        }
+
+        .btn-sm {
+            width: auto;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            border-radius: 14px;
+            gap: 8px;
         }
 
         /* Yarışma Ekranı */
@@ -462,7 +498,21 @@
             font-weight: 700;
         }
 
-        /* Şık Düzenleme Satırı (Radyo + Input) */
+        /* Soru düzenleme kartı */
+        .question-edit-card {
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .question-edit-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 1rem;
+        }
+
+        /* Şık Düzenleme Satırı (Radyo + Input + Sil) */
         .option-edit-row {
             display: flex;
             align-items: center;
@@ -475,9 +525,19 @@
             transition: all 0.2s ease;
         }
 
+        .option-edit-row .form-input {
+            flex: 1;
+            min-width: 0;
+        }
+
         .option-edit-row:focus-within {
             border-color: var(--accent-blue);
             background: rgba(56, 189, 248, 0.08);
+        }
+
+        .option-edit-row.is-correct {
+            border-color: var(--accent-green);
+            background: rgba(16, 185, 129, 0.12);
         }
 
         .option-radio-label {
@@ -487,8 +547,13 @@
             cursor: pointer;
             font-weight: 700;
             color: var(--accent-gold);
-            min-width: 110px;
+            min-width: 100px;
             font-size: 0.9rem;
+            margin-bottom: 0 !important;
+        }
+
+        .is-correct .option-radio-label {
+            color: var(--accent-green);
         }
 
         .option-radio {
@@ -496,6 +561,44 @@
             height: 20px;
             cursor: pointer;
             accent-color: var(--accent-green);
+            flex-shrink: 0;
+        }
+
+        .icon-btn {
+            width: 38px;
+            height: 38px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            border: 1px solid rgba(244, 63, 94, 0.35);
+            background: rgba(244, 63, 94, 0.12);
+            color: var(--accent-red);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover:not(:disabled) {
+            background: rgba(244, 63, 94, 0.3);
+        }
+
+        .icon-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Alt sabit kaydet çubuğu */
+        .editor-actions {
+            position: sticky;
+            bottom: 0;
+            z-index: 5;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 1.2rem;
+            padding: 1.2rem 0 0.3rem;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.98) 75%, rgba(15, 23, 42, 0));
         }
 
         .badge-rank {
@@ -549,6 +652,15 @@
         .hidden {
             display: none !important;
         }
+
+        @media (max-width: 600px) {
+            .container { padding: 2.4rem 1.2rem 1.6rem; }
+            .card-box { padding: 1.4rem; }
+            .admin-panel { padding: 1.2rem; }
+            .option-edit-row { flex-wrap: wrap; }
+            .option-radio-label { min-width: 100%; }
+            .option-edit-row .form-input { flex: 1 1 calc(100% - 50px); }
+        }
     </style>
 </head>
 <body>
@@ -572,7 +684,7 @@
         <!-- 1. AŞAMA: Giriş Formu -->
         <div id="stepLogin" class="card-box">
             <h3 style="margin-bottom: 1.4rem; color: #fff; font-size: 1.25rem;"><i class="fas fa-user-edit" style="color:var(--accent-blue);"></i> Yarışmacı Kaydı</h3>
-            
+
             <div class="form-group">
                 <label for="userName">Ad Soyad</label>
                 <div class="input-wrapper">
@@ -590,7 +702,7 @@
             </div>
 
             <div style="background: rgba(251, 191, 36, 0.12); border-left: 4px solid var(--accent-gold); padding: 1rem; border-radius: 14px; margin-bottom: 1.8rem; font-size: 0.88rem; color: #f1f5f9; line-height: 1.5;">
-                <i class="fas fa-info-circle" style="color: var(--accent-gold); margin-right: 6px;"></i> Test toplam 10 sorudan oluşmaktadır. Süreniz <strong>2 dakikadır (120 sn)</strong>.
+                <i class="fas fa-info-circle" style="color: var(--accent-gold); margin-right: 6px;"></i> Test toplam <strong id="qCountInfo">10</strong> sorudan oluşmaktadır. Süreniz <strong>2 dakikadır (120 sn)</strong>.
             </div>
 
             <button class="btn btn-primary" id="btnStartQuiz"><i class="fas fa-play"></i> Yarışmayı Başlat</button>
@@ -637,9 +749,9 @@
         <!-- Yönetici Paneli -->
         <div id="adminPanel" class="admin-panel hidden">
             <h3><i class="fas fa-user-lock"></i> Yönetici Kontrol Paneli</h3>
-            
+
             <div style="display: flex; gap: 12px; margin-bottom: 1.2rem; flex-wrap: wrap;">
-                <button class="btn btn-secondary" id="btnTabResults" style="font-size:0.88rem;"><i class="fas fa-trophy"></i> Katılımcı Sıralaması</button>
+                <button class="btn btn-secondary tab-active" id="btnTabResults" style="font-size:0.88rem;"><i class="fas fa-trophy"></i> Katılımcı Sıralaması</button>
                 <button class="btn btn-secondary" id="btnTabQuestions" style="font-size:0.88rem;"><i class="fas fa-edit"></i> Soruları ve Şıkları Düzenle</button>
             </div>
 
@@ -670,10 +782,18 @@
 
             <!-- Soru & Şık Editörü -->
             <div id="adminTabQuestions" class="hidden">
-                <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.8rem 1.2rem; border-radius: 14px; margin-bottom: 1.2rem; font-size: 0.88rem; color: var(--accent-blue);">
-                    <i class="fas fa-hand-pointer"></i> <strong>İpucu:</strong> Şıkları yazdıktan sonra doğru olan şıkkın yanındaki <strong>daireyi (radyo butonunu)</strong> işaretleyin!
+                <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.8rem 1.2rem; border-radius: 14px; margin-bottom: 1.2rem; font-size: 0.88rem; color: var(--accent-blue); line-height: 1.6;">
+                    <i class="fas fa-hand-pointer"></i> <strong>İpucu:</strong> Doğru cevabı seçmek için şıkkın solundaki <strong>daireyi</strong> işaretleyin (doğru şık yeşil görünür). Her soruda 2 ile 6 arasında şık olabilir.
+                    Değişiklikler <strong>“Tüm Değişiklikleri Kaydet”</strong> butonuna basana kadar yayına alınmaz.
+                    <div style="margin-top:0.4rem; color: var(--text-muted);">Toplam soru sayısı: <strong id="editorCount" style="color:#fff;">0</strong></div>
                 </div>
+
                 <div id="adminQuestionList"></div>
+
+                <div class="editor-actions">
+                    <button type="button" class="btn btn-secondary" id="btnAddQuestion"><i class="fas fa-plus-circle"></i> Yeni Soru Ekle</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveQuestions" style="flex:1;"><i class="fas fa-save"></i> Tüm Değişiklikleri Kaydet</button>
+                </div>
             </div>
         </div>
 
@@ -707,7 +827,12 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Varsayılan Sorular
+        const PREFIXES = ['A', 'B', 'C', 'D', 'E', 'F'];
+        const MIN_OPTIONS = 2;
+        const MAX_OPTIONS = 6;
+        const QUIZ_SECONDS = 120;
+
+        // Varsayılan Sorular (numaralar otomatik verildiği için metinlerdeki "1." gibi ön ekler yüklenirken temizlenir)
         const defaultQuestions = [
             {
                 title: "1. Ali, Burak, Ceyda ve Deniz kuyruktadır. Ali Ceyda'nın önündedir, Deniz ise Burak'ın arkasındadır. Burak en önde olduğuna göre 3. sıradaki kimdir?",
@@ -771,11 +896,12 @@
             }
         ];
 
-        let questions = [];
+        let questions = [];          // Yarışmada kullanılan (kaydedilmiş) sorular
+        let editQuestions = [];      // Yönetici editöründe üzerinde çalışılan kopya
         let currentQuestionIndex = 0;
         let userAnswers = [];
         let timerInterval = null;
-        let timeRemaining = 120;
+        let timeRemaining = QUIZ_SECONDS;
         let userData = { name: '', phone: '' };
 
         const stepLogin = document.getElementById('stepLogin');
@@ -783,36 +909,77 @@
         const stepResults = document.getElementById('stepResults');
         const adminPanel = document.getElementById('adminPanel');
 
-        // Soruları Önce Firebase'den, Olmazsa LocalStorage/Varsayılardan Yükle
-        async function loadQuestionsFromFirebase() {
-            try {
-                const docRef = doc(db, "settings", "quiz_questions");
-                const docSnap = await getDoc(docRef);
+        // ---------- Yardımcı fonksiyonlar ----------
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
-                if (docSnap.exists() && docSnap.data().list) {
-                    questions = docSnap.data().list;
-                } else {
-                    const localData = localStorage.getItem('ihh_questions');
-                    questions = localData ? JSON.parse(localData) : [...defaultQuestions];
+        function clone(obj) {
+            return JSON.parse(JSON.stringify(obj));
+        }
+
+        // Veriyi tutarlı hale getirir: numara ön eklerini siler, şık sayısını ve doğru şıkkı düzeltir
+        function normalizeQuestions(list) {
+            if (!Array.isArray(list)) return [];
+            return list.map((q) => {
+                const options = Array.isArray(q.options)
+                    ? q.options.slice(0, MAX_OPTIONS).map((o) => String(o ?? ''))
+                    : [];
+                while (options.length < MIN_OPTIONS) options.push('');
+
+                let correct = Number.isInteger(q.correct) ? q.correct : 0;
+                if (correct < 0 || correct >= options.length) correct = 0;
+
+                return {
+                    title: String(q.title ?? '').replace(/^\s*\d+\s*[\.\)]\s*/, ''),
+                    options,
+                    correct,
+                    explanation: String(q.explanation ?? '')
+                };
+            });
+        }
+
+        function updateQuestionCountInfo() {
+            document.getElementById('qCountInfo').innerText = questions.length;
+        }
+
+        // Soruları önce Firebase'den, olmazsa LocalStorage/Varsayılanlardan yükle
+        async function loadQuestionsFromFirebase() {
+            let source = null;
+            try {
+                const docSnap = await getDoc(doc(db, "settings", "quiz_questions"));
+                if (docSnap.exists() && Array.isArray(docSnap.data().list)) {
+                    source = docSnap.data().list;
                 }
             } catch (error) {
                 console.error("Firebase yükleme hatası:", error);
-                const localData = localStorage.getItem('ihh_questions');
-                questions = localData ? JSON.parse(localData) : [...defaultQuestions];
             }
+
+            if (!source) {
+                try {
+                    const localData = localStorage.getItem('ihh_questions');
+                    if (localData) source = JSON.parse(localData);
+                } catch (e) {
+                    source = null;
+                }
+            }
+
+            questions = normalizeQuestions(source || defaultQuestions);
+            if (questions.length === 0) questions = normalizeQuestions(defaultQuestions);
+
             userAnswers = new Array(questions.length).fill(null);
+            updateQuestionCountInfo();
         }
 
         loadQuestionsFromFirebase();
 
-        function escapeHtml(text) {
-            if(!text) return '';
-            const div = document.createElement('div');
-            div.innerText = text;
-            return div.innerHTML;
-        }
-
-        // Testi Başlat
+        // ---------- Testi Başlat ----------
         document.getElementById('btnStartQuiz').addEventListener('click', async () => {
             const nameInput = document.getElementById('userName').value.trim();
             const phoneInput = document.getElementById('userPhone').value.trim();
@@ -833,6 +1000,9 @@
             userData.name = nameInput;
             userData.phone = phoneInput;
 
+            currentQuestionIndex = 0;
+            timeRemaining = QUIZ_SECONDS;
+
             stepLogin.classList.add('hidden');
             stepQuiz.classList.remove('hidden');
 
@@ -840,7 +1010,7 @@
             renderQuestion();
         });
 
-        // Sayaç
+        // ---------- Sayaç ----------
         function startTimer() {
             const timerDisplay = document.getElementById('timerDisplay');
             const timerBox = document.getElementById('timerBox');
@@ -864,23 +1034,22 @@
             }, 1000);
         }
 
-        // Soruyu Göster
+        // ---------- Soruyu Göster ----------
         function renderQuestion() {
             if (!questions || questions.length === 0) return;
 
             const q = questions[currentQuestionIndex];
             document.getElementById('qCounter').innerText = `Soru ${currentQuestionIndex + 1} / ${questions.length}`;
-            document.getElementById('qTitle').innerText = q.title;
+            document.getElementById('qTitle').innerText = `${currentQuestionIndex + 1}. ${q.title}`;
 
             const optionsContainer = document.getElementById('qOptions');
             optionsContainer.innerHTML = '';
 
-            const prefixes = ['A', 'B', 'C', 'D'];
             q.options.forEach((opt, idx) => {
                 const optDiv = document.createElement('div');
                 optDiv.className = `option-item ${userAnswers[currentQuestionIndex] === idx ? 'selected' : ''}`;
                 optDiv.innerHTML = `
-                    <div class="option-prefix">${prefixes[idx]}</div>
+                    <div class="option-prefix">${PREFIXES[idx]}</div>
                     <div>${escapeHtml(opt)}</div>
                 `;
                 optDiv.onclick = () => {
@@ -894,8 +1063,8 @@
             const btnNext = document.getElementById('btnNext');
 
             btnPrev.style.visibility = currentQuestionIndex === 0 ? 'hidden' : 'visible';
-            btnNext.innerHTML = currentQuestionIndex === questions.length - 1 
-                ? '<i class="fas fa-check-circle"></i> Sınavı Bitir' 
+            btnNext.innerHTML = currentQuestionIndex === questions.length - 1
+                ? '<i class="fas fa-check-circle"></i> Sınavı Bitir'
                 : 'Sonraki <i class="fas fa-arrow-right"></i>';
         }
 
@@ -917,7 +1086,7 @@
             }
         });
 
-        // Testi Bitir & Kaydet
+        // ---------- Testi Bitir & Kaydet ----------
         async function finishQuiz() {
             clearInterval(timerInterval);
 
@@ -928,7 +1097,7 @@
                 }
             });
 
-            const timeSpent = 120 - timeRemaining;
+            const timeSpent = QUIZ_SECONDS - timeRemaining;
             const timeFormatted = `${Math.floor(timeSpent / 60)}d ${timeSpent % 60}s`;
 
             try {
@@ -936,6 +1105,7 @@
                     name: userData.name,
                     phone: userData.phone,
                     score: score,
+                    total: questions.length,
                     timeSpent: timeSpent,
                     timeFormatted: timeFormatted,
                     timestamp: serverTimestamp()
@@ -963,7 +1133,7 @@
                     <div style="font-weight: 700; margin-bottom: 0.6rem; color: ${isCorrect ? 'var(--accent-green)' : 'var(--accent-red)'}">
                         ${idx + 1}. Soru: ${isCorrect ? '✅ Doğru' : (isUnanswered ? '⚪ Boş Bırakıldı' : '❌ Yanlış')}
                     </div>
-                    <div style="font-size: 0.98rem; margin-bottom: 0.6rem; font-weight:600;">${escapeHtml(q.title)}</div>
+                    <div style="font-size: 0.98rem; margin-bottom: 0.6rem; font-weight:600;">${idx + 1}. ${escapeHtml(q.title)}</div>
                     <div style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">
                         <strong>Sizin Cevabınız:</strong> ${userAnswers[idx] !== null ? escapeHtml(q.options[userAnswers[idx]]) : 'Cevaplanmadı'}<br>
                         <strong>Doğru Cevap:</strong> <span style="color:var(--accent-green); font-weight:600;">${escapeHtml(q.options[q.correct])}</span>
@@ -976,28 +1146,47 @@
             });
         }
 
-        // Yönetici Paneli İşlemleri
+        // ---------- Yönetici Paneli ----------
+        const btnTabResults = document.getElementById('btnTabResults');
+        const btnTabQuestions = document.getElementById('btnTabQuestions');
+
+        function setActiveTab(tab) {
+            const showResults = tab === 'results';
+            document.getElementById('adminTabResults').classList.toggle('hidden', !showResults);
+            document.getElementById('adminTabQuestions').classList.toggle('hidden', showResults);
+            btnTabResults.classList.toggle('tab-active', showResults);
+            btnTabQuestions.classList.toggle('tab-active', !showResults);
+        }
+
         document.getElementById('btnAdminLogin').addEventListener('click', async () => {
+            // Panel zaten açıksa, kaydedilmemiş düzenlemeleri kaybetmemek için tekrar yükleme yapma
+            if (!adminPanel.classList.contains('hidden')) {
+                adminPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+
             const pwd = prompt("Yönetici Şifresi:");
             if (pwd && pwd.trim() === "ihh2026sb") {
                 alert("Giriş Başarılı!");
                 await loadQuestionsFromFirebase();
+                editQuestions = clone(questions);
                 adminPanel.classList.remove('hidden');
+                setActiveTab('results');
                 loadLeaderboard();
+                adminPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } else if (pwd !== null) {
                 alert("Hatalı Şifre!");
             }
         });
 
-        document.getElementById('btnTabResults').addEventListener('click', () => {
-            document.getElementById('adminTabResults').classList.remove('hidden');
-            document.getElementById('adminTabQuestions').classList.add('hidden');
+        btnTabResults.addEventListener('click', () => {
+            collectEditorValues(); // Sekmeden çıkarken yazılanları kaybetme
+            setActiveTab('results');
             loadLeaderboard();
         });
 
-        document.getElementById('btnTabQuestions').addEventListener('click', () => {
-            document.getElementById('adminTabResults').classList.add('hidden');
-            document.getElementById('adminTabQuestions').classList.remove('hidden');
+        btnTabQuestions.addEventListener('click', () => {
+            setActiveTab('questions');
             renderAdminQuestionEditor();
         });
 
@@ -1020,12 +1209,12 @@
                 });
 
                 resultsList.sort((a, b) => {
-                    const scoreA = Number(a.score || 0);
-                    const scoreB = Number(b.score || 0);
+                    const scoreA = Number(a.score ?? 0);
+                    const scoreB = Number(b.score ?? 0);
                     if (scoreB !== scoreA) return scoreB - scoreA;
-                    
-                    const timeA = Number(a.timeSpent || 999);
-                    const timeB = Number(b.timeSpent || 999);
+
+                    const timeA = Number(a.timeSpent ?? 999);
+                    const timeB = Number(b.timeSpent ?? 999);
                     return timeA - timeB;
                 });
 
@@ -1034,7 +1223,7 @@
                 resultsList.forEach((data, index) => {
                     const rank = index + 1;
                     const tr = document.createElement('tr');
-                    
+
                     let rankBadge = `<strong>#${rank}</strong>`;
                     if (rank === 1) rankBadge = '<span class="badge-rank rank-1">🥇 1. (Şampiyon)</span>';
                     else if (rank === 2) rankBadge = '<span class="badge-rank rank-2">🥈 2. Derece</span>';
@@ -1042,11 +1231,13 @@
 
                     if (rank <= 3) tr.className = 'top-three-row';
 
+                    const total = data.total || questions.length;
+
                     tr.innerHTML = `
                         <td>${rankBadge}</td>
                         <td><strong>${escapeHtml(data.name || '')}</strong></td>
                         <td><a href="tel:${escapeHtml(data.phone || '')}" class="phone-link"><i class="fas fa-phone-alt"></i> ${escapeHtml(data.phone || '')}</a></td>
-                        <td><span style="color:var(--accent-green); font-weight:bold; font-size:1.05rem;">${data.score}/${questions.length} Puan</span></td>
+                        <td><span style="color:var(--accent-green); font-weight:bold; font-size:1.05rem;">${escapeHtml(data.score)}/${escapeHtml(total)} Puan</span></td>
                         <td><i class="far fa-clock"></i> ${escapeHtml(data.timeFormatted || '')}</td>
                         <td>${data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString('tr-TR') : '-'}</td>
                     `;
@@ -1060,130 +1251,221 @@
             }
         }
 
-        // GELİŞMİŞ ŞIK & DOĞRU CEVAP DÜZENLEYİCİSİ
+        // ---------- SORU, ŞIK VE DOĞRU CEVAP DÜZENLEYİCİSİ ----------
+        const adminList = document.getElementById('adminQuestionList');
+
+        // Ekrandaki alanlarda yazılanları editQuestions içine aktarır.
+        // Soru/şık ekleyip silmeden ve kaydetmeden önce çağrılır, böylece yazılanlar kaybolmaz.
+        function collectEditorValues() {
+            editQuestions.forEach((q, qIdx) => {
+                const titleEl = document.getElementById(`adminQ_${qIdx}_title`);
+                if (!titleEl) return; // Editör henüz çizilmemiş
+
+                q.title = titleEl.value;
+                q.options = q.options.map((oldValue, oIdx) => {
+                    const el = document.getElementById(`adminQ_${qIdx}_opt${oIdx}`);
+                    return el ? el.value : oldValue;
+                });
+
+                const expEl = document.getElementById(`adminQ_${qIdx}_exp`);
+                if (expEl) q.explanation = expEl.value;
+
+                const checked = document.querySelector(`input[name="correct_opt_${qIdx}"]:checked`);
+                if (checked) q.correct = parseInt(checked.value, 10);
+            });
+        }
+
         function renderAdminQuestionEditor() {
-            const container = document.getElementById('adminQuestionList');
-            container.innerHTML = '';
+            const scrollY = window.scrollY;
+            adminList.innerHTML = '';
+            document.getElementById('editorCount').innerText = editQuestions.length;
 
-            const prefixes = ['A', 'B', 'C', 'D'];
-
-            questions.forEach((q, qIdx) => {
+            editQuestions.forEach((q, qIdx) => {
                 const box = document.createElement('div');
-                box.className = 'card-box';
-                box.style.marginBottom = '1.5rem';
+                box.className = 'card-box question-edit-card';
+                box.dataset.q = qIdx;
 
-                let optionsRowsHtml = '';
-                for (let optIdx = 0; optIdx < 4; optIdx++) {
-                    const isChecked = (q.correct === optIdx) ? 'checked' : '';
-                    optionsRowsHtml += `
-                        <div class="option-edit-row">
-                            <label class="option-radio-label" for="radio_${qIdx}_${optIdx}">
-                                <input type="radio" name="correct_opt_${qIdx}" value="${optIdx}" id="radio_${qIdx}_${optIdx}" class="option-radio" ${isChecked}>
-                                <span>${prefixes[optIdx]} Şıkkı</span>
-                            </label>
-                            <input type="text" class="form-input" id="adminQ_${qIdx}_opt${optIdx}" style="padding-left:1rem;" value="${escapeHtml(q.options[optIdx] || '')}" placeholder="${prefixes[optIdx]} Şıkkının Metni">
-                        </div>
-                    `;
-                }
+                const canRemoveOption = q.options.length > MIN_OPTIONS;
+                const canAddOption = q.options.length < MAX_OPTIONS;
+
+                const optionRowsHtml = q.options.map((opt, oIdx) => `
+                    <div class="option-edit-row ${q.correct === oIdx ? 'is-correct' : ''}">
+                        <label class="option-radio-label" for="radio_${qIdx}_${oIdx}" title="Doğru cevap olarak işaretle">
+                            <input type="radio" name="correct_opt_${qIdx}" value="${oIdx}" id="radio_${qIdx}_${oIdx}" class="option-radio" ${q.correct === oIdx ? 'checked' : ''}>
+                            <span>${PREFIXES[oIdx]} Şıkkı</span>
+                        </label>
+                        <input type="text" class="form-input plain" id="adminQ_${qIdx}_opt${oIdx}" value="${escapeHtml(opt)}" placeholder="${PREFIXES[oIdx]} şıkkının metni">
+                        <button type="button" class="icon-btn" data-action="remove-option" data-q="${qIdx}" data-o="${oIdx}" title="${canRemoveOption ? 'Bu şıkkı sil' : 'En az 2 şık olmalı'}" ${canRemoveOption ? '' : 'disabled'}>
+                            <i class="fas fa-xmark"></i>
+                        </button>
+                    </div>
+                `).join('');
 
                 box.innerHTML = `
-                    <div style="display:flex; justify-shadow:space-between; align-items:center; margin-bottom:1rem;">
+                    <div class="question-edit-head">
                         <h4 style="color:var(--accent-blue); font-size:1.1rem;"><i class="fas fa-question-circle"></i> Soru ${qIdx + 1}</h4>
-                        <button class="btn btn-danger" onclick="deleteQuestion(${qIdx})" style="width:auto; padding:0.4rem 0.9rem; font-size:0.82rem;"><i class="fas fa-trash"></i> Soruyu Sil</button>
+                        <button type="button" class="btn btn-danger btn-sm" data-action="delete-question" data-q="${qIdx}">
+                            <i class="fas fa-trash"></i> Soruyu Sil
+                        </button>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label>Soru Metni</label>
-                        <textarea class="form-input" id="adminQ_${qIdx}_title" rows="2" style="padding:0.8rem;">${escapeHtml(q.title)}</textarea>
+                        <label for="adminQ_${qIdx}_title">Soru Metni</label>
+                        <textarea class="form-input plain" id="adminQ_${qIdx}_title" rows="3" placeholder="Soru metnini yazın">${escapeHtml(q.title)}</textarea>
                     </div>
 
                     <div class="form-group">
                         <label style="color:var(--accent-gold); margin-bottom:0.8rem;">
-                            <i class="fas fa-check-circle" style="color:var(--accent-green);"></i> Şıklar (Doğru Cevabın Yanındaki Daireyi İşaretleyin)
+                            <i class="fas fa-check-circle" style="color:var(--accent-green);"></i> Şıklar (doğru cevabın yanındaki daireyi işaretleyin)
                         </label>
-                        ${optionsRowsHtml}
+                        ${optionRowsHtml}
+                        <button type="button" class="btn btn-secondary btn-sm" data-action="add-option" data-q="${qIdx}" ${canAddOption ? '' : 'disabled'} style="margin-top:0.4rem;">
+                            <i class="fas fa-plus"></i> Şık Ekle
+                        </button>
                     </div>
 
                     <div class="form-group" style="margin-bottom:0;">
-                        <label>Çözüm / Açıklama Metni</label>
-                        <input type="text" class="form-input" id="adminQ_${qIdx}_exp" style="padding-left:1rem;" value="${escapeHtml(q.explanation || '')}" placeholder="Çözüm detayını buraya yazabilirsiniz">
+                        <label for="adminQ_${qIdx}_exp">Çözüm / Açıklama Metni</label>
+                        <textarea class="form-input plain" id="adminQ_${qIdx}_exp" rows="2" placeholder="Çözümün açıklamasını buraya yazabilirsiniz">${escapeHtml(q.explanation || '')}</textarea>
                     </div>
                 `;
-                container.appendChild(box);
+                adminList.appendChild(box);
             });
 
-            // Alt Butonlar
-            const btnGroup = document.createElement('div');
-            btnGroup.style.display = 'flex';
-            btnGroup.style.gap = '12px';
-            btnGroup.style.marginTop = '1.5rem';
-            btnGroup.style.flexWrap = 'wrap';
-
-            const addQBtn = document.createElement('button');
-            addQBtn.className = 'btn btn-secondary';
-            addQBtn.style.width = 'auto';
-            addQBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Yeni Soru Ekle';
-            addQBtn.onclick = () => {
-                questions.push({
-                    title: `${questions.length + 1}. Yeni Soru Metni`,
-                    options: ["Seçenek A", "Seçenek B", "Seçenek C", "Seçenek D"],
-                    correct: 0,
-                    explanation: "Bu sorunun çözüm açıklaması."
-                });
-                renderAdminQuestionEditor();
-            };
-
-            const saveBtn = document.createElement('button');
-            saveBtn.className = 'btn btn-primary';
-            saveBtn.style.flex = '1';
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Tüm Değişiklikleri Kaydet';
-            saveBtn.onclick = async () => {
-                saveBtn.disabled = true;
-                saveBtn.innerText = "Kaydediliyor...";
-
-                // Formdaki tüm verileri topla
-                for (let qIdx = 0; qIdx < questions.length; qIdx++) {
-                    questions[qIdx].title = document.getElementById(`adminQ_${qIdx}_title`).value;
-                    questions[qIdx].options[0] = document.getElementById(`adminQ_${qIdx}_opt0`).value;
-                    questions[qIdx].options[1] = document.getElementById(`adminQ_${qIdx}_opt1`).value;
-                    questions[qIdx].options[2] = document.getElementById(`adminQ_${qIdx}_opt2`).value;
-                    questions[qIdx].options[3] = document.getElementById(`adminQ_${qIdx}_opt3`).value;
-                    questions[qIdx].explanation = document.getElementById(`adminQ_${qIdx}_exp`).value;
-
-                    // Doğru şıkkı radyodan oku
-                    const selectedRadio = document.querySelector(`input[name="correct_opt_${qIdx}"]:checked`);
-                    if (selectedRadio) {
-                        questions[qIdx].correct = parseInt(selectedRadio.value, 10);
-                    }
-                }
-
-                // Hem LocalStorage'a hem de Firebase'e kaydet
-                localStorage.setItem('ihh_questions', JSON.stringify(questions));
-
-                try {
-                    await setDoc(doc(db, "settings", "quiz_questions"), { list: questions });
-                    alert("Tüm soru metinleri, A-B-C-D şıkları ve doğru cevaplar başarıyla kaydedildi!");
-                } catch (err) {
-                    console.error("Firebase kayıt hatası:", err);
-                    alert("Sorular yerel olarak kaydedildi. (Firebase bildirimi: " + err.message + ")");
-                } finally {
-                    saveBtn.disabled = false;
-                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Tüm Değişiklikleri Kaydet';
-                }
-            };
-
-            btnGroup.appendChild(addQBtn);
-            btnGroup.appendChild(saveBtn);
-            container.appendChild(btnGroup);
+            window.scrollTo(0, scrollY);
         }
 
-        // Soru Silme Fonksiyonu
-        window.deleteQuestion = function(index) {
-            if (confirm(`${index + 1}. soruyu silmek istediğinize emin misiniz?`)) {
-                questions.splice(index, 1);
+        // Tıklamalar: soru sil, şık ekle, şık sil
+        adminList.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action]');
+            if (!btn || btn.disabled) return;
+
+            collectEditorValues();
+
+            const qIdx = Number(btn.dataset.q);
+            const oIdx = Number(btn.dataset.o);
+            const q = editQuestions[qIdx];
+            if (!q) return;
+
+            switch (btn.dataset.action) {
+                case 'delete-question':
+                    if (editQuestions.length <= 1) {
+                        alert("En az bir soru kalmalıdır.");
+                        return;
+                    }
+                    if (confirm(`${qIdx + 1}. soruyu silmek istediğinize emin misiniz?`)) {
+                        editQuestions.splice(qIdx, 1);
+                        renderAdminQuestionEditor();
+                    }
+                    break;
+
+                case 'add-option':
+                    if (q.options.length < MAX_OPTIONS) {
+                        q.options.push('');
+                        renderAdminQuestionEditor();
+                        const newInput = document.getElementById(`adminQ_${qIdx}_opt${q.options.length - 1}`);
+                        if (newInput) newInput.focus();
+                    }
+                    break;
+
+                case 'remove-option':
+                    if (q.options.length > MIN_OPTIONS) {
+                        q.options.splice(oIdx, 1);
+                        // Doğru şıkkın yerini güncelle
+                        if (q.correct === oIdx) q.correct = 0;
+                        else if (q.correct > oIdx) q.correct -= 1;
+                        renderAdminQuestionEditor();
+                    }
+                    break;
+            }
+        });
+
+        // Doğru şık seçildiğinde satırı yeşil yap
+        adminList.addEventListener('change', (e) => {
+            if (!e.target.classList.contains('option-radio')) return;
+            const card = e.target.closest('.question-edit-card');
+            const qIdx = Number(card.dataset.q);
+            const oIdx = Number(e.target.value);
+            if (editQuestions[qIdx]) editQuestions[qIdx].correct = oIdx;
+            card.querySelectorAll('.option-edit-row').forEach((row, i) => {
+                row.classList.toggle('is-correct', i === oIdx);
+            });
+        });
+
+        // Yeni soru ekle
+        document.getElementById('btnAddQuestion').addEventListener('click', () => {
+            collectEditorValues();
+            editQuestions.push({
+                title: '',
+                options: ['', '', '', ''],
+                correct: 0,
+                explanation: ''
+            });
+            renderAdminQuestionEditor();
+
+            const lastIdx = editQuestions.length - 1;
+            const titleEl = document.getElementById(`adminQ_${lastIdx}_title`);
+            if (titleEl) {
+                titleEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                titleEl.focus();
+            }
+        });
+
+        function validateQuestions(list) {
+            if (list.length === 0) return "En az bir soru olmalıdır.";
+            for (let i = 0; i < list.length; i++) {
+                const q = list[i];
+                if (!q.title) return `${i + 1}. sorunun metni boş.`;
+                if (q.options.length < MIN_OPTIONS) return `${i + 1}. soruda en az ${MIN_OPTIONS} şık olmalı.`;
+                const emptyIdx = q.options.findIndex((o) => !o);
+                if (emptyIdx !== -1) return `${i + 1}. sorunun ${PREFIXES[emptyIdx]} şıkkı boş. Doldurun veya şıkkı silin.`;
+                if (q.correct < 0 || q.correct >= q.options.length) return `${i + 1}. soru için doğru şıkkı işaretleyin.`;
+            }
+            return null;
+        }
+
+        // Kaydet
+        const btnSave = document.getElementById('btnSaveQuestions');
+        btnSave.addEventListener('click', async () => {
+            collectEditorValues();
+
+            const cleaned = editQuestions.map((q) => ({
+                title: q.title.trim(),
+                options: q.options.map((o) => o.trim()),
+                correct: q.correct,
+                explanation: (q.explanation || '').trim()
+            }));
+
+            const errorMsg = validateQuestions(cleaned);
+            if (errorMsg) {
+                alert(errorMsg);
+                return;
+            }
+
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+
+            questions = cleaned;
+            editQuestions = clone(cleaned);
+            userAnswers = new Array(questions.length).fill(null);
+            updateQuestionCountInfo();
+
+            try {
+                localStorage.setItem('ihh_questions', JSON.stringify(questions));
+            } catch (e) { /* yerel kayıt başarısız olabilir, önemli değil */ }
+
+            try {
+                await setDoc(doc(db, "settings", "quiz_questions"), { list: questions });
+                alert("Sorular, şıklar ve doğru cevaplar kaydedildi. Yarışmacılar artık güncel soruları görecek.");
+            } catch (err) {
+                console.error("Firebase kayıt hatası:", err);
+                alert("Sorular sadece bu cihaza kaydedildi; yarışmacılar GÖRMEYECEK.\nFirebase hatası: " + err.message + "\n\nFirestore güvenlik kurallarının 'settings' koleksiyonuna yazmaya izin verdiğini kontrol edin.");
+            } finally {
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<i class="fas fa-save"></i> Tüm Değişiklikleri Kaydet';
                 renderAdminQuestionEditor();
             }
-        };
+        });
     </script>
 </body>
 </html>
