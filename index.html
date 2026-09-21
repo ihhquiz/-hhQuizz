@@ -648,7 +648,7 @@
 
             <!-- Soru & Şık Editörü -->
             <div id="adminTabQuestions" class="hidden">
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.2rem;">Soru metinlerini, A-B-C-D şıklarını ve doğru cevabı buradan özgürce değiştirebilirsiniz.</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.2rem;">Burada yapacağınız değişiklikler anında veritabanına kaydedilir ve **tüm kullanıcılar için** geçerli olur.</p>
                 <div id="adminQuestionList"></div>
             </div>
         </div>
@@ -667,7 +667,7 @@
 
     <script type="module">
         import { initializeApp } from "firebase/app";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "firebase/firestore";
+        import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
         // Firebase Yapılandırmanız
         const firebaseConfig = {
@@ -683,7 +683,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Varsayılan Sorular
+        // Varsayılan Sorular (Eğer Firebase'de henüz soru yoksa kullanılır)
         const defaultQuestions = [
             {
                 title: "1. Ali, Burak, Ceyda ve Deniz kuyruktadır. Ali Ceyda'nın önündedir, Deniz ise Burak'ın arkasındadır. Burak en önde olduğuna göre 3. sıradaki kimdir?",
@@ -747,9 +747,9 @@
             }
         ];
 
-        let questions = JSON.parse(localStorage.getItem('ihh_quiz_questions')) || defaultQuestions;
+        let questions = [...defaultQuestions];
         let currentQuestionIndex = 0;
-        let userAnswers = new Array(questions.length).fill(null);
+        let userAnswers = [];
         let timerInterval = null;
         let timeRemaining = 120;
         let userData = { name: '', phone: '' };
@@ -759,6 +759,27 @@
         const stepResults = document.getElementById('stepResults');
         const adminPanel = document.getElementById('adminPanel');
 
+        // Firebase'den Soruları Çek
+        async function loadQuestionsFromFirebase() {
+            try {
+                const docRef = doc(db, "settings", "quiz_questions");
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists() && docSnap.data().list) {
+                    questions = docSnap.data().list;
+                } else {
+                    questions = [...defaultQuestions];
+                }
+            } catch (error) {
+                console.error("Sorular Firebase'den yüklenirken hata oluştu:", error);
+                questions = [...defaultQuestions];
+            }
+            userAnswers = new Array(questions.length).fill(null);
+        }
+
+        // Sayfa Açılınca Soruları Yükle
+        loadQuestionsFromFirebase();
+
         function escapeHtml(text) {
             if(!text) return '';
             const div = document.createElement('div');
@@ -767,7 +788,7 @@
         }
 
         // Testi Başlat
-        document.getElementById('btnStartQuiz').addEventListener('click', () => {
+        document.getElementById('btnStartQuiz').addEventListener('click', async () => {
             const nameInput = document.getElementById('userName').value.trim();
             const phoneInput = document.getElementById('userPhone').value.trim();
             const phoneRegex = /^(05\d{9}|5\d{9})$/;
@@ -781,6 +802,9 @@
                 alert("Lütfen geçerli bir telefon numarası giriniz (Örn: 05XX XXX XX XX).");
                 return;
             }
+
+            // Başlamadan önce güncel soruları veritabanından çek
+            await loadQuestionsFromFirebase();
 
             userData.name = nameInput;
             userData.phone = phoneInput;
@@ -818,6 +842,8 @@
 
         // Soruları Ekrana Getir
         function renderQuestion() {
+            if (!questions || questions.length === 0) return;
+
             const q = questions[currentQuestionIndex];
             document.getElementById('qCounter').innerText = `Soru ${currentQuestionIndex + 1} / ${questions.length}`;
             document.getElementById('qTitle').innerText = q.title;
@@ -927,10 +953,11 @@
         }
 
         // Yönetici Girişi
-        document.getElementById('btnAdminLogin').addEventListener('click', () => {
+        document.getElementById('btnAdminLogin').addEventListener('click', async () => {
             const pwd = prompt("Yönetici Şifresi:");
             if (pwd && pwd.trim() === "ihh2026sb") {
                 alert("Giriş Başarılı!");
+                await loadQuestionsFromFirebase();
                 adminPanel.classList.remove('hidden');
                 loadLeaderboard();
             } else if (pwd !== null) {
@@ -1078,7 +1105,10 @@
             const saveBtn = document.createElement('button');
             saveBtn.className = 'btn btn-primary';
             saveBtn.innerHTML = '<i class="fas fa-save"></i> Tüm Soruları ve Şıkları Kaydet';
-            saveBtn.onclick = () => {
+            saveBtn.onclick = async () => {
+                saveBtn.disabled = true;
+                saveBtn.innerText = "Kaydediliyor...";
+
                 questions.forEach((q, idx) => {
                     q.title = document.getElementById(`adminQ_${idx}_title`).value;
                     q.options[0] = document.getElementById(`adminQ_${idx}_opt0`).value;
@@ -1088,20 +1118,33 @@
                     q.correct = parseInt(document.getElementById(`adminQ_${idx}_correct`).value, 10);
                     q.explanation = document.getElementById(`adminQ_${idx}_exp`).value;
                 });
-                localStorage.setItem('ihh_quiz_questions', JSON.stringify(questions));
-                alert("Sorular, şıklar ve doğru cevaplar başarıyla kaydedildi!");
+
+                try {
+                    await setDoc(doc(db, "settings", "quiz_questions"), { list: questions });
+                    alert("Sorular veritabanına kaydedildi! Artık TÜM KULLANICILAR bu yeni soruları görecek.");
+                } catch (err) {
+                    console.error("Kayıt hatası:", err);
+                    alert("Kaydedilirken bir hata oluştu: " + err.message);
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Tüm Soruları ve Şıkları Kaydet';
+                }
             };
 
             const resetBtn = document.createElement('button');
             resetBtn.className = 'btn btn-danger';
             resetBtn.style.width = 'auto';
             resetBtn.innerHTML = '<i class="fas fa-undo"></i> Varsayılana Sıfırla';
-            resetBtn.onclick = () => {
+            resetBtn.onclick = async () => {
                 if (confirm("Tüm sorular orijinal hallerine döndürülecektir. Onaylıyor musunuz?")) {
-                    localStorage.removeItem('ihh_quiz_questions');
                     questions = [...defaultQuestions];
-                    renderAdminQuestionEditor();
-                    alert("Sorular orijinal varsayılan hale getirildi.");
+                    try {
+                        await setDoc(doc(db, "settings", "quiz_questions"), { list: questions });
+                        renderAdminQuestionEditor();
+                        alert("Sorular orijinal varsayılan hale getirildi.");
+                    } catch (err) {
+                        alert("Sıfırlama hatası: " + err.message);
+                    }
                 }
             };
 
