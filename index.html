@@ -753,6 +753,7 @@
             <div style="display: flex; gap: 12px; margin-bottom: 1.2rem; flex-wrap: wrap;">
                 <button class="btn btn-secondary tab-active" id="btnTabResults" style="font-size:0.88rem;"><i class="fas fa-trophy"></i> Katılımcı Sıralaması</button>
                 <button class="btn btn-secondary" id="btnTabQuestions" style="font-size:0.88rem;"><i class="fas fa-edit"></i> Soruları ve Şıkları Düzenle</button>
+                <button class="btn btn-danger" id="btnResetAll" style="font-size:0.88rem; width:auto; padding: 0.9rem 1.6rem;"><i class="fas fa-trash-can"></i> Sıfırla</button>
             </div>
 
             <!-- Sıralama Tablosu -->
@@ -811,7 +812,7 @@
 
     <script type="module">
         import { initializeApp } from "firebase/app";
-        import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+        import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 
         // Firebase Yapılandırmanız
         const firebaseConfig = {
@@ -1188,6 +1189,64 @@
         btnTabQuestions.addEventListener('click', () => {
             setActiveTab('questions');
             renderAdminQuestionEditor();
+        });
+
+        // ---------- SIFIRLA BUTONU ----------
+        // Tüm katılımcı kayıtlarını (results koleksiyonu) siler ve
+        // soruları varsayılan (fabrika) sorulara geri döndürür.
+        document.getElementById('btnResetAll').addEventListener('click', async () => {
+            // 1. Onay: Emin misiniz?
+            if (!confirm("DİKKAT! Tüm kayıtlı katılımcı bilgileri ve sorular silinecek.\n\nEmin misiniz?")) {
+                return;
+            }
+            // 2. Onay: Geri alınamaz uyarısı
+            if (!confirm("Bu işlem GERİ ALINAMAZ! Tüm veriler kalıcı olarak silinecek.\n\nOnaylıyor musunuz?")) {
+                return;
+            }
+
+            const btnReset = document.getElementById('btnResetAll');
+            btnReset.disabled = true;
+            btnReset.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sıfırlanıyor...';
+
+            try {
+                // --- Kayıtlı tüm katılımcı sonuçlarını sil ---
+                const resultsSnap = await getDocs(collection(db, "results"));
+                const deleteOps = [];
+                resultsSnap.forEach((d) => {
+                    deleteOps.push(deleteDoc(doc(db, "results", d.id)));
+                });
+                await Promise.all(deleteOps);
+
+                // --- Kaydedilmiş soru setini sil (varsayılana döner) ---
+                try {
+                    await deleteDoc(doc(db, "settings", "quiz_questions"));
+                } catch (e) {
+                    // Belge zaten yoksa sorun değil
+                    console.warn("Soru belgesi silinirken uyarı:", e);
+                }
+
+                // --- Yerel önbelleği temizle ---
+                try {
+                    localStorage.removeItem('ihh_questions');
+                } catch (e) { /* yoksay */ }
+
+                // --- Bellekteki durumu varsayılana döndür ---
+                questions = normalizeQuestions(defaultQuestions);
+                editQuestions = clone(questions);
+                userAnswers = new Array(questions.length).fill(null);
+                updateQuestionCountInfo();
+
+                alert("✅ Sıfırlama tamamlandı!\n\n• Tüm katılımcı kayıtları silindi.\n• Sorular varsayılan hâline döndürüldü.");
+
+                loadLeaderboard();
+                renderAdminQuestionEditor();
+            } catch (err) {
+                console.error("Sıfırlama hatası:", err);
+                alert("Sıfırlama sırasında hata oluştu:\n" + err.message);
+            } finally {
+                btnReset.disabled = false;
+                btnReset.innerHTML = '<i class="fas fa-trash-can"></i> Sıfırla';
+            }
         });
 
         // Yönetici Sıralama Tablosu
